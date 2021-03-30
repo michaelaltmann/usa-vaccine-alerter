@@ -1,4 +1,4 @@
-# USA Vaccine Availability Aleter Script
+# USA Vaccine Availability Alerter Script
 
 This script uses the API provided by [covid-vaccine-spotter](https://github.com/GUI/covid-vaccine-spotter) to send a text message when a vaccine has been located.
 
