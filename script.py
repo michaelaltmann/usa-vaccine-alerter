@@ -9,9 +9,9 @@ import sys
 config = {'state': 'IA',  # two letter identifier (AL, AK, etc)
           'cities': ['Ames'],  # name of cities to monitor
           'zip_codes': ['50012'],  # zip codes to monitor
-          'to': '+17122235883',  # phone number to send to +15555555555
+          'to': '',  # phone number to send to +15555555555
           # phone number to send from (listed in twilio) +15555555555
-          'from': '+17603891374'
+          'from': ''
           }
 
 
