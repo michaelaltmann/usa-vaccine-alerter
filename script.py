@@ -5,6 +5,7 @@ import datetime
 import sys
 import json
 from twilio.base.exceptions import TwilioRestException
+import signal
 
 # load configuration data
 try:
@@ -82,9 +83,12 @@ def set_interval(func, sec):
     t.start()
     return t
 
+def terminate(a, b):
+    interval.cancel()
 
+signal.signal(signal.SIGINT, terminate)
 # initial check
 check_appointments()
 
 # check every 60 seconds
-set_interval(check_appointments, 60)
+interval = set_interval(check_appointments, 60)
