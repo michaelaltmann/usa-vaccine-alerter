@@ -4,9 +4,9 @@ import threading
 import datetime
 import sys
 import json
+from twilio.base.exceptions import TwilioRestException
 
-# Populate with your own configuration data
-# zip codes and cities must have one match (if you want your entire city, you can leave zip_codes list blank)
+# load configuration data
 try:
     file = open('config.json')
 except IOError:
@@ -24,8 +24,13 @@ if use_twilio:
 
 
 def check_appointments():
-    data = requests.get(
-        'https://www.vaccinespotter.org/api/v0/states/{state}.json'.format(state=config['state'])).json()
+    try:
+        data = requests.get(
+            'https://www.vaccinespotter.org/api/v0/states/{state}.json'.format(state=config['state'])).json()
+    except:
+        print(
+            f"Failed to fetch {config['state']} state data. Confirm this is a valid two letter state identifier and try again later.")
+        return
     appointment = find_appointment(data)
     if (appointment != None):
         message = compose_message(appointment)
@@ -50,10 +55,14 @@ def find_appointment(data):
 
 
 def send_message(message, to, from_):
-    message = client.messages.create(
-        body=message, to=to, from_=from_)
-    print(f"Text message sent to {to}!")
-    return message.sid
+    try:
+        message = client.messages.create(
+            body=message, to=to, from_=from_)
+        print(f"Text message sent to {to}!")
+        return message.sid
+    except TwilioRestException as e:
+        print("Failed to send text message.")
+        print(e.msg)
 
 
 def time():
