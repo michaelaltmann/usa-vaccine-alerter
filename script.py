@@ -3,16 +3,16 @@ import requests
 import threading
 import datetime
 import sys
+import json
 
 # Populate with your own configuration data
 # zip codes and cities must have one match (if you want your entire city, you can leave zip_codes list blank)
-config = {'state': 'IA',  # two letter identifier (AL, AK, etc)
-          'cities': ['Ames'],  # name of cities to monitor
-          'zip_codes': ['50012'],  # zip codes to monitor
-          'to': '',  # phone number to send to +15555555555
-          # phone number to send from (listed in twilio) +15555555555
-          'from': ''
-          }
+try:
+    file = open('config.json')
+except IOError:
+    print("config.json file not found.")
+    exit(1)
+config = json.load(file)
 
 
 # Twilio initialization
