@@ -14,9 +14,9 @@ This script uses the API provided by [covid-vaccine-spotter](https://github.com/
 
 ```json
 {
-  "state": "IA",
-  "cities": ["Ames"],
-  "zip_codes": ["50012"],
+  "state": "IL",
+  "cities": ["Chicago"],
+  "zip_codes": [],
   "to": "+15555555555",
   "from": "+15555555555"
 }
@@ -32,7 +32,7 @@ This script uses the API provided by [covid-vaccine-spotter](https://github.com/
 2. Create a file named `config.json` and copy the below configuration code.
 
 ```json
-{ "state": "IA", "cities": ["Ames"], "zip_codes": ["50012"] }
+{ "state": "IL", "cities": ["Chicago"], "zip_codes": [] }
 ```
 
 4. Edit the values to setup your search parameters.
