@@ -35,8 +35,9 @@ def check_appointments():
     if (appointment != None):
         message = compose_message(appointment)
         if use_twilio:
-            send_message(message,
-                         config['to'], config['from'])
+            for number in config['to']:
+                send_message(message,
+                             number, config['from'])
         print(f"{time()} - Appointment found!\n\n{message}")
         exit(0)
     print(f"{time()} - No appointments found. ")

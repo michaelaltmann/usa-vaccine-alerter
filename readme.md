@@ -10,14 +10,14 @@ This script uses the API provided by [covid-vaccine-spotter](https://github.com/
 2. Setup a Twilio account. Free trial link: [(refferal)](www.twilio.com/referral/WTOydE) [(no refferal)](https://www.twilio.com/try-twilio)
    - Get a phone number
    - Note your phone number, SID, and Auth Token
-3. Create a file named `config.json` and copy the below configuration code.
+3. Create a file named `config.json` and copy the below configuration code. Each phone number to send a message to should be listed in the "to" list.
 
 ```json
 {
   "state": "IL",
   "cities": ["Chicago"],
   "zip_codes": [],
-  "to": "+15555555555",
+  "to": ["+15555555555"],
   "from": "+15555555555"
 }
 ```
