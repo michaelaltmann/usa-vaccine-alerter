@@ -7,13 +7,14 @@ import json
 from twilio.base.exceptions import TwilioRestException
 import signal
 
-# load configuration data
-try:
-    file = open('config.json')
-except IOError:
-    print("config.json file not found.")
-    exit(1)
-config = json.load(file)
+
+def clean_config(alert):
+    if not alert['zip_codes']:
+        alert['zip_codes'] = []
+    if not alert['cities']:
+        alert['cities'] = []
+    alert['cities'] = [city.lower() for city in alert['cities']]
+    return alert
 
 
 # Twilio initialization
@@ -25,6 +26,7 @@ if use_twilio:
 
 
 def check_appointments():
+    global previous_messages
     try:
         data = requests.get(
             'https://www.vaccinespotter.org/api/v0/states/{state}.json'.format(state=config['state'])).json()
@@ -32,28 +34,60 @@ def check_appointments():
         print(
             f"Failed to fetch {config['state']} state data. Confirm this is a valid two letter state identifier and try again later.")
         return
-    appointment = find_appointment(data)
-    if (appointment != None):
-        message = compose_message(appointment)
-        if use_twilio:
-            for number in config['to']:
-                send_message(message,
-                             number, config['from'])
-        print(f"{time()} - Appointment found!\n\n{message}")
-        exit(0)
-    print(f"{time()} - No appointments found. ")
+    for alert in config["alerts"]:
+        alert_name = alert["name"]
+        features_with__appointments = filter_features(data, alert)
+
+        messages = []
+        for feature in features_with__appointments:
+            for appointment in feature['properties']["appointments"]:
+                message = compose_message(feature, appointment)
+                messages.append(message)
+        new_messages = [
+            m for m in messages if m not in previous_messages.get(alert_name, [])]
+        message = "\n".join(new_messages)
+        if new_messages:
+            if use_twilio:
+                for number in alert['to']:
+                    send_message(message,
+                                 number, alert['from'])
+            print(f"{time()} - New appointments found for {alert_name}!\n{message}")
+        previous_messages[alert_name] = messages
+        print(f"{time()} - No new appointments found for {alert_name}.")
 
 
-def compose_message(appointment):
-    return f"COVID-19 vaccine located! {appointment['properties']['provider_brand_name']} in {appointment['properties']['city']}, {appointment['properties']['state']}. Book ASAP:\n\n{appointment['properties']['url']}"
+def compose_message(feature, appointment):
+    d = datetime.datetime.fromisoformat(appointment['time'])
+    return f"{feature['properties']['provider_brand_name']} {feature['properties']['name']} in {feature['properties']['city']} at {d.strftime('%m/%d %H:%M')}"
 
 
-def find_appointment(data):
-    for feature in data['features']:
-        if ((feature['properties']['postal_code'] in config['zip_codes'] or
-                feature['properties']['city'].lower() in list_to_lower(config['cities'])) and feature['properties']['appointments_available']):
-            return feature
-    return None
+def filter_features(data, alert):
+    return [feature for feature in data['features'] if filter_feature(feature, alert)]
+
+
+def filter_feature(f, alert):
+    of_interest = (f['properties']['appointments_available'] and
+                   (match_zipcode(f, alert) or
+                    match_city(f, alert) or
+                    match_box(f, alert)
+                    )
+                   )
+    return of_interest
+
+
+def match_zipcode(f, alert):
+    return alert['zip_codes'] and f['properties']['postal_code'] in alert['zip_codes']
+
+
+def match_city(f, alert):
+    return alert['cities'] and f['properties']['city'].lower() in alert['cities']
+
+
+def match_box(f, alert):
+    lon = f['geometry']['coordinates'][0]
+    lat = f['geometry']['coordinates'][1]
+    box = alert['box']
+    return box and lon >= box["min_lon"] and lon <= box["max_lon"] and lat >= box["min_lat"] and lat <= box["max_lat"]
 
 
 def send_message(message, to, from_):
@@ -71,10 +105,6 @@ def time():
     return str(datetime.datetime.now())
 
 
-def list_to_lower(uppercase_list: list):
-    return [i.lower() for i in uppercase_list]
-
-
 def set_interval(func, sec):
     def func_wrapper():
         set_interval(func, sec)
@@ -83,10 +113,25 @@ def set_interval(func, sec):
     t.start()
     return t
 
+
 def terminate(a, b):
+    print("Terminating")
     interval.cancel()
 
+
+# load configuration data
+try:
+    file = open('config.json')
+except IOError:
+    print("config.json file not found.")
+    exit(1)
+config = json.load(file)
+config["alerts"] = [clean_config(alert) for alert in config["alerts"]]
+
+previous_messages = {}
 signal.signal(signal.SIGINT, terminate)
+signal.signal(signal.SIGQUIT, terminate)
+
 # initial check
 check_appointments()
 
